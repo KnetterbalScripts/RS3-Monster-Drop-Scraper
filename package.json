@@ -1,0 +1,54 @@
+{
+  "name": "runescape-monster-scraper-desktop",
+  "version": "2.0.0",
+  "description": "Desktop app for scraping RuneScape monster drops with full itemlist.json database support and dual export formats",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "dist": "npm run build",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "runescape",
+    "scraper",
+    "monster-drops",
+    "electron",
+    "desktop",
+    "itemlist",
+    "lua-export",
+    "json-export"
+  ],
+  "author": "Knetterbal",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.knetterbal.runescape-monster-scraper",
+    "productName": "RuneScape Monster Scraper",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "itemlist.json",
+      "drops/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  }
+}

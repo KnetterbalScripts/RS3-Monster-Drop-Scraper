@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS3 Monster Scraper</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">⚔️</span>
+                    <h1>RS3 Monster Scraper</h1>
+                </div>
+                <div class="version-info">
+                    <span id="database-status">Loading database...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="form-group">
+                    <label for="monsterName">Monster Name:</label>
+                    <input type="text" id="monsterName" placeholder="e.g., Blue dragon" autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label for="monsterUrl">Wiki URL:</label>
+                    <input type="url" id="monsterUrl" placeholder="https://runescape.wiki/w/Monster_name" autocomplete="off">
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" id="addToQueue" class="btn btn-secondary">
+                        <span class="btn-icon">➕</span>
+                        Add to Queue
+                    </button>
+                    <button type="button" id="scrapeButton" class="btn btn-primary">
+                        <span class="btn-icon">🚀</span>
+                        Scrape & Download
+                    </button>
+                </div>
+            </section>
+
+            <!-- Quick Examples -->
+            <section class="examples-section">
+                <h3>🔥 Quick Examples (click to use):</h3>
+                <div class="examples-grid">
+                    <button class="example-btn" data-name="Abyssal beast" data-url="https://runescape.wiki/w/Abyssal_beast">
+                        Abyssal beast
+                    </button>
+                    <button class="example-btn" data-name="Blue dragon" data-url="https://runescape.wiki/w/Blue_dragon">
+                        Blue dragon
+                    </button>
+                    <button class="example-btn" data-name="Helwyr" data-url="https://runescape.wiki/w/Helwyr">
+                        Helwyr (Boss)
+                    </button>
+                    <button class="example-btn" data-name="Nex" data-url="https://runescape.wiki/w/Nex">
+                        Nex (Boss)
+                    </button>
+                    <button class="example-btn" data-name="Vindicta" data-url="https://runescape.wiki/w/Vindicta_%26_Gorvek">
+                        Vindicta (Boss)
+                    </button>
+                </div>
+            </section>
+
+            <!-- Queue Section -->
+            <section class="queue-section" id="queueSection" style="display: none;">
+                <h3>📋 Scraping Queue:</h3>
+                <div id="queueList" class="queue-list"></div>
+            </section>
+
+            <!-- Status Section -->
+            <section class="status-section">
+                <div id="statusMessage" class="status-message"></div>
+                <div id="progressContainer" class="progress-container" style="display: none;">
+                    <div class="progress-bar">
+                        <div id="progressBar" class="progress-fill"></div>
+                    </div>
+                    <span id="progressText">0%</span>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h3>✅ Scraping Results:</h3>
+                <div id="resultsList" class="results-list"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="database-info">
+                    <span id="databaseInfo">Database: Loading...</span>
+                </div>
+                <div class="app-info">
+                    <span> Knetterbal | Electron <span id="electronVersion"></span></span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
