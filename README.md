@@ -119,10 +119,6 @@ Each monster generates a JSON file like `blue_dragon_drops.json`:
 }
 ```
 
-**Features:**
-- ✅ Clean item names without "(noted)" suffix for perfect string matching
-- ✅ Accurate item IDs for both noted and unnoted versions
-- ✅ Consistent naming for easy programming integration
 
 ### Lua Format
 Each monster also generates a Lua file like `blue_dragon_drops.lua`:
@@ -142,9 +138,7 @@ local Abyssal_demon_drops = {20268, 49402, 30825, 30828, 4151, 1619, 1617, 1631,
 return Abyssal_demon_drops
 ```
 
-**Features:**
-- ✅ Clean item names for easy string matching: `itemName == "Magic logs"`
-- ✅ Noted information preserved via comments: `-- noted`
+
 
 
 ## 🔧 Development
