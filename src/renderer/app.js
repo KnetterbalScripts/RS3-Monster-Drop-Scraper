@@ -440,15 +440,93 @@ class MonsterScraperApp {
                             <button class="btn btn-secondary" onclick="app.downloadResult(${index})">
                                 💾 Download JSON
                             </button>
-                            <button class="btn btn-secondary" onclick="app.downloadResultLua(${index})">
-                                📄 Download Lua
+                            <button class="btn btn-secondary" id="download-lua-${index}">
+                                📄 Export Selected Lua
                             </button>
                         ` : ''}
                     </div>
                 </div>
+                <div class="result-drops" id="result-drops-${index}" style="margin-top:12px; display: ${result.totalFoundDrops > 0 ? 'block' : 'none'};">
+                    <!-- Controls -->
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <button class="btn btn-secondary" id="select-all-${index}">Select all</button>
+                        <button class="btn btn-secondary" id="deselect-all-${index}">Deselect all</button>
+                        <span style="align-self:center; color:#a0a0a0; font-size:0.9rem; margin-left:8px;">Select which items to include in the Lua export</span>
+                    </div>
+                    <div class="drops-table" id="drops-table-${index}"></div>
+                </div>
             `;
             
             this.resultsList.appendChild(resultItem);
+
+            // Render drops table and wire selection
+            result.selected = new Set();
+            const dropsContainer = resultItem.querySelector(`#drops-table-${index}`);
+            if (result.drops && result.drops.length > 0) {
+                const table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                const tbody = document.createElement('tbody');
+
+                result.drops.forEach((drop, di) => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                    tr.style.padding = '6px 0';
+
+                    const tdCheck = document.createElement('td');
+                    tdCheck.style.width = '40px';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = true;
+                    cb.dataset.resultIndex = index;
+                    cb.dataset.dropIndex = di;
+                    cb.addEventListener('change', (e) => {
+                        const r = results[Number(e.target.dataset.resultIndex)];
+                        const d = r.drops[Number(e.target.dataset.dropIndex)];
+                        if (e.target.checked) r.selected.add(d.itemId);
+                        else r.selected.delete(d.itemId);
+                    });
+                    // Initialize selected set
+                    result.selected.add(drop.itemId);
+                    tdCheck.appendChild(cb);
+
+                    const tdName = document.createElement('td');
+                    tdName.innerHTML = `<strong>${this.escapeHtml(drop.itemName)}</strong>${drop.isNoted ? ' <span style="color:#f0ad4e; font-weight:600;">(noted)</span>' : ''}`;
+
+                    const tdId = document.createElement('td');
+                    tdId.style.textAlign = 'right';
+                    tdId.style.color = '#a0a0a0';
+                    tdId.textContent = drop.itemId ? drop.itemId : '-';
+
+                    tr.appendChild(tdCheck);
+                    tr.appendChild(tdName);
+                    tr.appendChild(tdId);
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody);
+                dropsContainer.appendChild(table);
+
+                // Wire select/deselect all
+                const selectAllBtn = resultItem.querySelector(`#select-all-${index}`);
+                const deselectAllBtn = resultItem.querySelector(`#deselect-all-${index}`);
+                selectAllBtn.addEventListener('click', () => {
+                    result.drops.forEach(d => result.selected.add(d.itemId));
+                    dropsContainer.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+                });
+                deselectAllBtn.addEventListener('click', () => {
+                    result.selected.clear();
+                    dropsContainer.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+                });
+
+                // Wire export button for selected items
+                const exportBtn = resultItem.querySelector(`#download-lua-${index}`);
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', async () => {
+                        await this.downloadResultLuaSelected(index);
+                    });
+                }
+            }
         });
         
         // Store results for download
@@ -481,6 +559,33 @@ class MonsterScraperApp {
             this.showStatus(`✅ Saved ${result.monster} drops to Lua: ${filePath}`, 'success');
         } catch (error) {
             console.error('Failed to save Lua file:', error);
+            this.showStatus('Failed to save Lua file: ' + error.message, 'error');
+        }
+    }
+
+    async downloadResultLuaSelected(index) {
+        if (!this.lastResults || !this.lastResults[index]) return;
+
+        const result = this.lastResults[index];
+        if (!result.drops || result.drops.length === 0) {
+            this.showStatus('No drops available to export', 'warning');
+            return;
+        }
+
+        const selectedIds = result.selected && result.selected.size > 0 ? result.selected : null;
+        if (!selectedIds || selectedIds.size === 0) {
+            this.showStatus('No items selected for Lua export', 'warning');
+            return;
+        }
+
+        // Build selected drops array preserving shape
+        const selectedDrops = result.drops.filter(d => selectedIds.has(d.itemId));
+
+        try {
+            const filePath = await window.electronAPI.saveDropsLua(result.monster, selectedDrops);
+            this.showStatus(`✅ Saved ${result.monster} selected drops to Lua: ${filePath}`, 'success');
+        } catch (error) {
+            console.error('Failed to save selected Lua file:', error);
             this.showStatus('Failed to save Lua file: ' + error.message, 'error');
         }
     }

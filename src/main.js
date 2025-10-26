@@ -233,83 +233,112 @@ class MonsterScraperApp {
                     req.end();
                 });
                 
-                // Simple regex-based parsing for item names
+                // Targeted parsing: only parse tables that contain both "Item" and "Quantity" headers
                 const drops = [];
                 const seen = new Set();
-                
-                // Look for table rows with item names
-                const tableRowRegex = /<tr[^>]*>(.*?)<\/tr>/gis;
-                const cellRegex = /<t[dh][^>]*>(.*?)<\/t[dh]>/gis;
+
+                const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
+                const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+                const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
                 const imgNotedRegex = /<img[^>]*alt[^>]*noted[^>]*>/i;
-                
+
                 let tableMatch;
-                while ((tableMatch = tableRowRegex.exec(html)) !== null) {
-                    const rowContent = tableMatch[1];
-                    
-                    // Skip if this doesn't look like a drop table row
-                    if (!rowContent.toLowerCase().includes('item') && 
-                        !rowContent.toLowerCase().includes('drop') &&
-                        !rowContent.includes('<td')) continue;
-                    
-                    let cellMatch;
-                    cellRegex.lastIndex = 0; // Reset regex
-                    
-                    const rowCells = [];
-                    while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
-                        rowCells.push(cellMatch[1]);
-                    }
-                    
-                    // Process each cell but also check the full row for noted indicators
-                    const fullRowText = rowContent.toLowerCase();
-                    const hasNotedInRow = fullRowText.includes('(noted)') || 
-                                         fullRowText.includes('noted') ||
-                                         imgNotedRegex.test(rowContent);
-                    
-                    for (const cellContent of rowCells) {
-                        // Clean HTML tags and decode entities
-                        const cleanText = cellContent
-                            .replace(/<[^>]*>/g, ' ')  // Remove HTML tags
-                            .replace(/&nbsp;/g, ' ')   // Replace nbsp
-                            .replace(/&amp;/g, '&')   // Replace amp
-                            .replace(/&lt;/g, '<')    // Replace lt
-                            .replace(/&gt;/g, '>')    // Replace gt
-                            .replace(/\s+/g, ' ')     // Normalize whitespace
-                            .trim();
-                        
-                        // Skip headers and empty cells
-                        if (!cleanText || cleanText.length < 3 ||
-                            cleanText.toLowerCase().includes('quantity') ||
-                            cleanText.toLowerCase().includes('rarity') ||
-                            cleanText.toLowerCase().includes('price') ||
-                            cleanText.toLowerCase().match(/^(item|drop|name|value)s?$/)) continue;
-                        
-                        // Check if it looks like an item name
-                        if (cleanText.match(/^[A-Za-z][A-Za-z0-9\s\(\)'-]{2,}$/)) {
-                            const cellHasNoted = cleanText.toLowerCase().includes('(noted)') || 
-                                               imgNotedRegex.test(cellContent);
-                            
-                            const isNoted = cellHasNoted || hasNotedInRow;
-                            
-                            // If noted was detected but not in item name, add it
-                            let finalItemName = cleanText;
-                            if (isNoted && !cleanText.toLowerCase().includes('(noted)')) {
-                                finalItemName = cleanText + ' (noted)';
-                            }
-                            
-                            const itemKey = `${finalItemName.toLowerCase()}_${isNoted}`;
-                            
-                            if (!seen.has(itemKey)) {
-                                seen.add(itemKey);
-                                drops.push({
-                                    itemName: finalItemName,
-                                    isNoted: isNoted
-                                });
+                while ((tableMatch = tableRegex.exec(html)) !== null) {
+                    const tableHtml = tableMatch[1];
+
+                    // Find header row that contains both 'item' and 'quantity'
+                    let headerFound = false;
+                    const headers = [];
+                    let trMatchHeader;
+                    rowRegex.lastIndex = 0;
+                    while ((trMatchHeader = rowRegex.exec(tableHtml)) !== null) {
+                        const rowHtml = trMatchHeader[1];
+                        // collect header-like cells
+                        cellRegex.lastIndex = 0;
+                        const cells = [];
+                        let cMatch;
+                        while ((cMatch = cellRegex.exec(rowHtml)) !== null) {
+                            cells.push(cMatch[1].replace(/<[^>]*>/g, ' ').trim());
+                        }
+
+                        if (cells.length > 0) {
+                            const joined = cells.join(' ').toLowerCase();
+                            if (joined.includes('item') && joined.includes('quantity')) {
+                                headerFound = true;
+                                // store headers for column index lookup
+                                for (const h of cells) headers.push(h.toLowerCase());
+                                break;
                             }
                         }
                     }
+
+                    if (!headerFound) continue; // skip non-drop tables
+
+                    // determine column indices
+                    const itemColIndex = headers.findIndex(h => h.includes('item'));
+                    const quantityColIndex = headers.findIndex(h => h.includes('quantity'));
+
+                    // parse all rows in this table and extract item/quantity
+                    let trMatch;
+                    rowRegex.lastIndex = 0;
+                    while ((trMatch = rowRegex.exec(tableHtml)) !== null) {
+                        const rowHtml = trMatch[1];
+
+                        // skip header rows (containing <th> or the header we already found)
+                        if (/<th/i.test(rowHtml)) continue;
+
+                        // extract cells
+                        cellRegex.lastIndex = 0;
+                        const cells = [];
+                        let cc;
+                        while ((cc = cellRegex.exec(rowHtml)) !== null) {
+                            cells.push(cc[1]);
+                        }
+
+                        if (!cells || cells.length === 0) continue;
+
+                        // get item cell text
+                        const rawItemCell = (itemColIndex >= 0 && itemColIndex < cells.length) ? cells[itemColIndex] : cells[0];
+                        const rawQuantityCell = (quantityColIndex >= 0 && quantityColIndex < cells.length) ? cells[quantityColIndex] : null;
+
+                        // Clean HTML tags and decode entities for item
+                        const cleanItemText = rawItemCell
+                            .replace(/<[^>]*>/g, ' ')  // Remove HTML tags
+                            .replace(/&nbsp;/g, ' ')   // Replace nbsp
+                            .replace(/&amp;/g, '&')    // Replace amp
+                            .replace(/&lt;/g, '<')     // Replace lt
+                            .replace(/&gt;/g, '>')     // Replace gt
+                            .replace(/\s+/g, ' ')     // Normalize whitespace
+                            .trim();
+
+                        if (!cleanItemText || cleanItemText.length < 2) continue;
+
+                        // Determine noted via quantity cell or item cell or images
+                        let isNoted = false;
+                        if (rawQuantityCell) {
+                            const qText = rawQuantityCell.replace(/<[^>]*>/g, ' ').toLowerCase();
+                            if (qText.includes('noted')) isNoted = true;
+                        }
+                        if (!isNoted && cleanItemText.toLowerCase().includes('(noted)')) isNoted = true;
+                        if (!isNoted && imgNotedRegex.test(rawItemCell)) isNoted = true;
+
+                        // If noted detected but not in name, append for consistency
+                        let finalItemName = cleanItemText;
+                        if (isNoted && !finalItemName.toLowerCase().includes('(noted)')) {
+                            finalItemName = finalItemName + ' (noted)';
+                        }
+
+                        // Basic item name validation
+                        if (!finalItemName.match(/^[A-Za-z][A-Za-z0-9\s\(\)'-]{1,}$/)) continue;
+
+                        const itemKey = `${finalItemName.toLowerCase()}_${isNoted}`;
+                        if (!seen.has(itemKey)) {
+                            seen.add(itemKey);
+                            drops.push({ itemName: finalItemName, isNoted: isNoted });
+                        }
+                    }
                 }
-                
-                
+
                 return drops;
                 
             } catch (error) {
