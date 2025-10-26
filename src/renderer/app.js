@@ -297,21 +297,29 @@ class MonsterScraperApp {
                 continue;
             }
             
-            // For noted items, try to find the noted version first
+            // For noted items, try to find the noted version via noteData
             let itemId;
             if (isNoted) {
-                // For noted items, try specific noted patterns with tradeable priority
-                itemId = this.findBestItemId(drop.itemName, nameToId); // This uses findTradeableItemId internally
+                // First try to find the base item by name
+                const baseItem = this.itemDatabase.items?.find(item => 
+                    item.name && item.name.toLowerCase() === baseItemName && item.noteData
+                );
                 
-                // If no noted version found, try to find the unnoted and calculate noted ID
-                if (!itemId) {
-                    const unnotedId = this.findBestItemId(baseItemName, nameToId);
-                    if (unnotedId) {
-                        // For RuneScape, noted versions are typically unnoted_id + 1
-                        const potentialNotedId = unnotedId + 1;
-                        // Verify this noted ID exists in our database
-                        if (this.itemDatabase.items && this.itemDatabase.items.find(item => item.id === potentialNotedId)) {
-                            itemId = potentialNotedId;
+                if (baseItem && baseItem.noteData) {
+                    // Use the noted ID from noteData
+                    itemId = baseItem.noteData;
+                } else {
+                    // Fallback: try looking for a noted version directly
+                    itemId = this.findBestItemId(drop.itemName, nameToId);
+                    
+                    // If still no noted version found, try unnoted + 1 heuristic
+                    if (!itemId) {
+                        const unnotedId = this.findBestItemId(baseItemName, nameToId);
+                        if (unnotedId) {
+                            const potentialNotedId = unnotedId + 1;
+                            if (this.itemDatabase.items && this.itemDatabase.items.find(item => item.id === potentialNotedId)) {
+                                itemId = potentialNotedId;
+                            }
                         }
                     }
                 }
@@ -323,12 +331,11 @@ class MonsterScraperApp {
             if (itemId && !seenUniqueItems.has(uniqueKey)) {
                 // Clean item name (remove noted suffix for consistency)
                 const cleanItemName = drop.itemName.replace(/\s*\(noted\)\s*$/i, '').trim();
-                const wasNoted = drop.itemName.toLowerCase().includes('(noted)');
                 
                 linkedDrops.push({
                     itemName: cleanItemName,
                     itemId: itemId,
-                    isNoted: wasNoted  // Keep noted info for Lua comments
+                    isNoted: isNoted  // Use the computed isNoted flag
                 });
                 seenIds.add(itemId);
                 seenUniqueItems.add(uniqueKey);
