@@ -434,15 +434,17 @@ class MonsterScraperApp {
             const statusIcon = result.error ? '❌' : (result.totalFoundDrops > 0 ? '✅' : '⚠️');
             
             resultItem.innerHTML = `
-                <div class="result-header">
-                    <div>
-                        <div class="result-monster">${statusIcon} ${this.escapeHtml(result.monster)}</div>
-                        <div class="result-stats">
-                            ${result.error ? `Error: ${this.escapeHtml(result.error)}` : 
-                              `Found ${result.totalFoundDrops} unique items`}
+                <div class="result-header" style="flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div>
+                            <div class="result-monster">${statusIcon} ${this.escapeHtml(result.monster)}</div>
+                            <div class="result-stats">
+                                ${result.error ? `Error: ${this.escapeHtml(result.error)}` : 
+                                  `Found ${result.totalFoundDrops} unique items`}
+                            </div>
                         </div>
                     </div>
-                    <div class="result-actions">
+                    <div class="result-actions" style="display: flex; justify-content: center; gap: 0.5rem; width: 100%; margin-top: 1rem;">
                         ${result.totalFoundDrops > 0 ? `
                             <button class="btn btn-secondary" onclick="app.downloadResult(${index})">
                                 💾 Download JSON
