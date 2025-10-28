@@ -80,6 +80,41 @@ section {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+/* History Section */
+.history-section {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 147, 30, 0.05));
+    border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.history-dropdown {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(30, 30, 30, 0.9);
+    border: 2px solid rgba(255, 107, 53, 0.3);
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.history-dropdown:hover {
+    border-color: #ff6b35;
+    background: rgba(40, 40, 40, 0.9);
+}
+
+.history-dropdown:focus {
+    outline: none;
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+}
+
+.history-dropdown option {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    padding: 0.5rem;
+}
+
 /* Input Section */
 .form-group {
     margin-bottom: 1rem;

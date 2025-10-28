@@ -1,25 +1,26 @@
+
 # ⚔️ RuneScape Monster Scraper Desktop
 
-A powerful Electron desktop application for scraping monster drops from RuneScape Wiki with full support for the complete itemlist.json database (59,537 items).
+A powerful Electron desktop application for scraping monster drops from RuneScape Wiki with full support for the complete itemlist.json database.
 
 ![RuneScape Monster Scraper Desktop](app.png)
 
 ## ✨ Features
 
 - **🔥 Desktop Performance**: No browser limitations - handles large databases efficiently
-- **📊 Complete Database**: Uses itemlist.json (59,537 items) for maximum accuracy
+- **📊 Complete Database**: Uses itemlist.json for maximum accuracy
 - **🎯 Smart Item Matching**: Prioritizes tradeable items and handles noted/unnoted variants
-- **🚀 Batch Processing**: Queue multiple monsters and scrape them all at once
+- **🚀 Batch & Group Processing**: Queue multiple monsters and scrape them all at once, or select a group for combined export
 - **💾 Dual Export Formats**: JSON and Lua export options for maximum compatibility
- - **✅ Selectable Drops UI**: choose which scraped items to include in the Lua export (per-monster)
- - **🌐 HTTP scraping from Node**: the app performs requests from Node. Note: some sites may present browser challenges (see Troubleshooting)
+- **✅ Selectable Drops UI**: Choose which scraped items to include in the Lua export (per-monster or group)
+- **🌐 HTTP scraping from Node**: The app performs requests from Node. Note: some sites may present browser challenges (see Troubleshooting)
 - **🎨 Modern UI**: Beautiful dark theme with smooth animations
 - **⚡ Fast & Reliable**: Native desktop performance
 
 ## 🚀 Quick Start
-Each monster generates a Lua file containing a simple numeric ID array. This format is convenient for AutoLooter-style lists or other scripts that only require item IDs.
+Each monster or group generates a Lua file containing a simple numeric ID array. This format is convenient for AutoLooter-style lists or other scripts that only require item IDs.
 
-Example `blue_dragon_drops.lua` (IDs formatted in rows for readability):
+Example `blue_dragon_drops.lua`:
 
 ```lua
 -- Blue dragon Drops
@@ -28,8 +29,8 @@ Example `blue_dragon_drops.lua` (IDs formatted in rows for readability):
 -- Total drops: 25
 
 local Blue_dragon_drops = {
-  536, 1751, 1513,  -- ... more IDs
-  2140, 995, 2434
+   536, 1751, 1513,  -- ... more IDs
+   2140, 995, 2434
 }
 
 return Blue_dragon_drops
@@ -37,40 +38,30 @@ return Blue_dragon_drops
 
 Features of the Lua export:
 - ✅ Produces a compact numeric array of item IDs (easy to consume in addons/tools)
-- ✅ When exporting from the UI you can select which items to include (per-monster)
+- ✅ When exporting from the UI you can select which items to include (per-monster or group)
 - ✅ Noted items use the correct noted ID via the itemlist noteData mapping
+
 ## 📋 How to Use
 
 1. **Launch the app** - The database will automatically load on startup
 2. **Add monsters** - Enter monster name and RuneScape Wiki URL
 3. **Queue multiple monsters** - Add as many as you want to the queue
-4. **Scrape & Download** - Click the button to process all monsters
+4. **Scrape & Download** - Click the button to process all monsters, or select a group and scrape/export as a group
 5. **Choose Export Format** - Download as JSON or Lua files to the `/drops` folder
+6. **Selectable Drops** - After scraping, select which items to include in the Lua export (per-monster or group)
+7. **History** - Previously scraped monsters are saved and can be reused quickly
 
 ### ✅ Selectable Drops & Export Selected Lua
 
-After scraping a monster the app now shows a selectable list of the found drops. You can:
+After scraping, the app shows a selectable list of the found drops. You can:
 
 - Check/uncheck individual items to include them (default: all checked)
 - Use the `Select all` / `Deselect all` buttons for quick changes
 - Click `Export Selected Lua` to write only the checked items into the Lua file
 
-The Lua export button for each monster writes the selected item IDs (with noted-ID substitution when applicable) to `drops/<monster>_drops.lua`.
+The Lua export button writes the selected item IDs (with noted-ID substitution when applicable) to `drops/<monster>_drops.lua` or `drops/group__N_monsters__drops.lua` for group exports.
 
-Screenshot (example):
-
-![Export Selected Lua screenshot](LuaExport.png)
-
-This lets you build tidy AutoLooter-style ID lists (or other Lua-based lists) without manual post-processing.
-
-### Quick Examples (Built-in)
-- Abyssal beast
-- Blue dragon  
-- Helwyr (Boss)
-- Nex (Boss)
-- Vindicta (Boss)
-
-## �️ Project Structure
+## 🗂️ Project Structure
 
 ```
 RuneScape-Monster-Scraper/
@@ -82,114 +73,78 @@ RuneScape-Monster-Scraper/
 │       ├── styles.css   # Modern dark theme
 │       └── app.js       # Frontend logic
 ├── drops/               # Generated JSON and Lua files
-├── itemlist.json        # Complete item database (59,537 items)
+├── itemlist.json        # Complete item database
 └── package.json         # Project configuration
 ```
 
 ## 📊 Database Support
 
 Uses **itemlist.json** as the primary and only database:
-- **~59.5k items** with metadata from the game cache
-- **Accurate item IDs** and noted/unnoted mapping (via `noteData`)
-- **Tradeable detection** via `notTradeable` and `is_on_ge` properties
+- Accurate item IDs and noted/unnoted mapping (via `noteData`)
+- Tradeable detection via `notTradeable` and `is_on_ge` properties
 
 ## 🎯 Output Formats
 
-The scraper supports dual export formats for maximum compatibility with intelligent noted item handling:
-
 ### JSON Format
-Each monster generates a JSON file like `blue_dragon_drops.json`:
+Each monster or group generates a JSON file like `blue_dragon_drops.json`:
 
 ```json
 {
-  "monster": "Blue dragon",
-  "scrapedAt": "2025-10-20T15:30:45.123Z",
-  "totalFoundDrops": 25,
-  "drops": [
-    {
-      "itemName": "Dragon bones",
-      "itemId": 536
-    },
-    {
-      "itemName": "Blue dragonhide",
-      "itemId": 1751
-    },
-    {
-      "itemName": "Magic logs",
-      "itemId": 1513
-    }
-  ]
+   "monster": "Blue dragon",
+   "scrapedAt": "2025-10-20T15:30:45.123Z",
+   "totalFoundDrops": 25,
+   "drops": [
+      {
+         "itemName": "Dragon bones",
+         "itemId": 536
+      },
+      {
+         "itemName": "Blue dragonhide",
+         "itemId": 1751
+      },
+      {
+         "itemName": "Magic logs",
+         "itemId": 1513
+      }
+   ]
 }
 ```
-
-**Features:**
-- ✅ Clean item names without "(noted)" suffix for perfect string matching
-- ✅ Accurate item IDs for both noted and unnoted versions
-- ✅ Consistent naming for easy programming integration
 
 ### Lua Format
-Each monster generates a Lua file containing a compact numeric ID array. This format is convenient for AutoLooter-style lists or other scripts that only require item IDs.
-
-Example `blue_dragon_drops.lua` (IDs formatted in rows for readability):
+Each monster or group generates a Lua file in the same format. For both single and group exports, the output is always:
 
 ```lua
--- Blue dragon Drops
--- Generated by RS3 Monster Drop Scraper
--- Scraped at: 2025-10-20T15:30:45.123Z
--- Total drops: 25
-
-local Blue_dragon_drops = {
-  536, 1751, 1513,  -- ... more IDs
-  2140, 995, 2434
+local NPC_LIST = {
+   "Monster 1",
+   -- Add more monsters if exporting a group
 }
 
-return Blue_dragon_drops
+local LOOT_LIST = {536, 1751, 1513, ...}
 ```
 
-Features of the Lua export:
-- Produces a compact numeric array of item IDs (easy to consume in addons/tools)
-- When exporting from the UI you can select which items to include (per-monster)
-- Noted items use the correct noted ID via the itemlist `noteData` mapping
-
+If you export a single monster, `NPC_LIST` contains just one name. For a group, it contains all selected monsters. The format is always consistent, making it easy to use in scripts regardless of the number of monsters.
 
 ## 🔧 Development
 
 ### Available Scripts
 - `npm start` - Run the app
 - `npm run dev` - Run with DevTools and hot reload
-- `npm run build` - Build for all platforms
-- `npm run build-win` - Build for Windows only
 
 ### Tech Stack
 - **Electron** - Desktop app framework
 - **Node.js** - Backend processing and HTTP requests
-- **HTML parsing** - lightweight regex-based heuristics (may not handle every page layout; for pages that require JS or present anti-bot challenges use the in-app browser)
+- **HTML parsing** - Lightweight regex-based heuristics
 - **Modern CSS** - Dark theme UI
 
 ## 🛠️ Advanced Features
 
-### Smart Item Matching
-- **Direct name lookup** first
-- **Variation handling** (spaces, apostrophes, parentheses)
-- **Tradeable prioritization** automatically
-- **Charm ID correction** - Uses original game IDs (12160-12163) instead of Dungeoneering versions
-- **Noted item support** with smart name cleaning for consistent string matching
-- **Dual format optimization** - Clean names in both formats, noted info preserved via Lua comments
+- **Smart Item Matching**: Direct name lookup, variation handling, tradeable prioritization, charm ID correction, noted item support
+- **Selectable Export**: Choose which items to include in Lua export (per-monster or group)
+- **Group Scraping**: Select multiple monsters and export combined drops
+- **Error Handling**: Network error handling and logging; errors are surfaced to the UI and console
+- **Performance**: Progress tracking for long operations (progress bar and status messages)
 
-### Export Options
-- **JSON format** - Standard structured data format
-- **Lua format** - Perfect for RuneScape addons and calculators
-- **Dual download buttons** - Choose your preferred format per monster
-
-### Error Handling
-- Basic network error handling and logging; errors are surfaced to the UI and console for debugging
-- Note: some pages (Cloudflare/antibot) may require a real browser context — use the Electron UI to scrape those pages
-
-### Performance
-- Progress tracking for long operations (progress bar and status messages)
-- Reasonable memory usage for desktop environments; large databases are loaded into memory for faster lookups
-
-## � UI Features
+## 🖥️ UI Features
 
 - **Responsive design** - Works on any screen size
 - **Dark theme** - Easy on the eyes
@@ -197,7 +152,7 @@ Features of the Lua export:
 - **Real-time feedback** - Progress bars and status updates
 - **Queue management** - Add/remove monsters easily
 
-## � Troubleshooting
+## 🛡️ Troubleshooting
 
 **Database not loading:**
 - Ensure `itemlist.json` exists in project root
@@ -208,12 +163,7 @@ Features of the Lua export:
 - Verify Wiki URLs are correct and accessible
 - Check internet connection
 - Monitor console for detailed error messages
-  - Note: some wiki pages may return a Cloudflare "challenge" page for non-browser requests. Run the scrape from the Electron app UI (the bundled Chromium) to avoid this, or use a full-browser automation (Puppeteer) for headless verification.
-
-**Build issues:**
-- Run `npm audit fix` to resolve dependency warnings
-- Ensure Node.js version is 16+
-- Check that all files are present
+   - Note: some wiki pages may return a Cloudflare "challenge" page for non-browser requests. Run the scrape from the Electron app UI (the bundled Chromium) to avoid this, or use a full-browser automation (Puppeteer) for headless verification.
 
 ## 🏗️ Building from Source
 
@@ -221,11 +171,10 @@ Features of the Lua export:
 2. **Copy database files** (itemlist.json) to project root
 3. **Install dependencies:** `npm install`
 4. **Run:** `npm run dev`
-5. **Build executable:** `npm run build-win`
 
 ## 📄 License
 
-MIT License - Created by **Knetterbal**
+MIT License - Created by **KnetterbalScripts**
 
 ---
 

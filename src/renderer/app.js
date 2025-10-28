@@ -4,6 +4,7 @@ class MonsterScraperApp {
     this.isScrapingActive = false;
     this.itemDatabase = null;
     this.selectedQueueIndexes = new Set(); // Initialize selectedQueueIndexes here
+    this.scrapeHistory = [];
 
     this.initializeApp();
   }
@@ -14,8 +15,9 @@ class MonsterScraperApp {
       this.initializeElements();
       this.setupEventListeners();
 
-      // Load item database
+      // Load item database and history
       await this.loadItemDatabase();
+      await this.loadScrapeHistory();
 
       // Set version info
       this.setVersionInfo();
@@ -33,6 +35,7 @@ class MonsterScraperApp {
     this.monsterUrlInput = document.getElementById("monsterUrl");
     this.addToQueueBtn = document.getElementById("addToQueue");
     this.scrapeBtn = document.getElementById("scrapeButton");
+    this.historyDropdown = document.getElementById("historyDropdown");
 
     // Display elements
     this.queueSection = document.getElementById("queueSection");
@@ -54,6 +57,16 @@ class MonsterScraperApp {
     // Button events
     this.addToQueueBtn.addEventListener("click", () => this.addToQueue());
     this.scrapeBtn.addEventListener("click", () => this.startScraping());
+
+    // History dropdown
+    this.historyDropdown.addEventListener("change", (e) => {
+      if (e.target.value) {
+        const entry = this.scrapeHistory.find(h => h.name === e.target.value);
+        if (entry) {
+          this.fillExample(entry.name, entry.url);
+        }
+      }
+    });
 
     // Example buttons
     document.querySelectorAll(".example-btn").forEach((btn) => {
@@ -111,6 +124,45 @@ class MonsterScraperApp {
       const errorMsg = "Failed to load item database: " + error.message;
       this.databaseStatus.textContent = "❌ " + errorMsg;
       this.showStatus(errorMsg, "error");
+    }
+  }
+
+  // === HISTORY FUNCTIONS ===
+
+  async loadScrapeHistory() {
+    try {
+      this.scrapeHistory = await window.electronAPI.loadScrapeHistory();
+      this.updateHistoryDropdown();
+      console.log(`Loaded ${this.scrapeHistory.length} history entries`);
+    } catch (error) {
+      console.error("Failed to load scrape history:", error);
+    }
+  }
+
+  updateHistoryDropdown() {
+    // Clear existing options except the first one
+    this.historyDropdown.innerHTML = '<option value="">-- Select a monster from history --</option>';
+    
+    // Sort history alphabetically by name (case-insensitive)
+    const sortedHistory = [...this.scrapeHistory].sort((a, b) => 
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
+    
+    // Add history entries (without date)
+    sortedHistory.forEach(entry => {
+      const option = document.createElement('option');
+      option.value = entry.name;
+      option.textContent = entry.name;
+      this.historyDropdown.appendChild(option);
+    });
+  }
+
+  async addToHistory(monsterName, wikiUrl) {
+    try {
+      this.scrapeHistory = await window.electronAPI.addToScrapeHistory(monsterName, wikiUrl);
+      this.updateHistoryDropdown();
+    } catch (error) {
+      console.error("Failed to add to history:", error);
     }
   }
 
@@ -262,6 +314,9 @@ class MonsterScraperApp {
           );
 
           const linkedDrops = this.linkItemsToIds(drops);
+
+          // Add to history after successful scrape
+          await this.addToHistory(monster.name, monster.url);
 
           results.push({
             monster: monster.name,
@@ -545,12 +600,20 @@ class MonsterScraperApp {
       result.selected = new Set();
       const dropsContainer = resultItem.querySelector(`#drops-table-${index}`);
       if (result.drops && result.drops.length > 0) {
+        // Sort drops alphabetically by item name
+        const sortedDrops = [...result.drops].sort((a, b) => 
+          a.itemName.toLowerCase().localeCompare(b.itemName.toLowerCase())
+        );
+        
         const table = document.createElement("table");
         table.style.width = "100%";
         table.style.borderCollapse = "collapse";
         const tbody = document.createElement("tbody");
 
-        result.drops.forEach((drop, di) => {
+        sortedDrops.forEach((drop, di) => {
+          // Find original index for checkbox binding
+          const originalIndex = result.drops.indexOf(drop);
+          
           const tr = document.createElement("tr");
           tr.style.borderBottom = "1px solid rgba(255,255,255,0.04)";
           tr.style.padding = "6px 0";
@@ -561,7 +624,7 @@ class MonsterScraperApp {
           cb.type = "checkbox";
           cb.checked = true;
           cb.dataset.resultIndex = index;
-          cb.dataset.dropIndex = di;
+          cb.dataset.dropIndex = originalIndex;
           cb.addEventListener("change", (e) => {
             const r = results[Number(e.target.dataset.resultIndex)];
             const d = r.drops[Number(e.target.dataset.dropIndex)];
@@ -789,6 +852,10 @@ class MonsterScraperApp {
                 try {
                     const drops = await window.electronAPI.scrapeMonster(monster.url, monster.name);
                     const linkedDrops = this.linkItemsToIds(drops);
+                    
+                    // Add to history after successful scrape
+                    await this.addToHistory(monster.name, monster.url);
+                    
                     results.push({
                         monster: monster.name,
                         url: monster.url,

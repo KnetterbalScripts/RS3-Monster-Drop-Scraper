@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveGroupLua: (monsterNames, drops) => ipcRenderer.invoke('save-group-lua', monsterNames, drops),
     showSaveDialog: (defaultPath) => ipcRenderer.invoke('show-save-dialog', defaultPath),
     
+    // History operations
+    loadScrapeHistory: () => ipcRenderer.invoke('load-scrape-history'),
+    addToScrapeHistory: (monsterName, wikiUrl) => ipcRenderer.invoke('add-to-scrape-history', monsterName, wikiUrl),
+    
     // Debug operations
     logToMainProcess: (message) => ipcRenderer.invoke('log-to-main', message),
     

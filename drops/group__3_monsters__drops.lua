@@ -1,9 +1,9 @@
--- NPC LIST - Edit this directly
+
 local NPC_LIST = {
-    "Chaos dwogre",
     "Chaos dwarf",
-    "Chaos dwarf hand cannoneer"
+    "Chaos dwarf hand cannoneer",
+    "Chaos dwogre"
 }
 
--- LOOT LIST - Edit this directly
-local LOOT_LIST = {15259, 12176, 995, 47315, 44, 1516, 2435, 1445, 1618, 18778, 15243, 15241}
+
+local LOOT_LIST = {44, 1445, 1516, 1618, 2435, 5304, 12176, 15241, 15243, 15259, 18778, 47315}
