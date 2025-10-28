@@ -164,6 +164,59 @@ class MonsterScraperApp {
         return luaContent;
     }
 
+    async saveGroupLua(monsterNames, drops) {
+        // Header info
+        const now = new Date();
+        const timestamp = now.toISOString();
+        // Format monster names
+        const npcList = monsterNames.map(name => `    "${name}"`).join(',\n');
+
+        // Get unique drops by itemId and isNoted
+        const seenKeys = new Set();
+        const uniqueDrops = drops.filter(drop => {
+            // Uniek per itemId en noted-status
+            const key = `${drop.itemId}_${drop.isNoted}`;
+            if (seenKeys.has(key)) return false;
+            seenKeys.add(key);
+            return true;
+        });
+
+        // Map drops to correct itemId (noted ID als nodig)
+        const itemIds = uniqueDrops.map(drop => {
+            let finalItemId = drop.itemId;
+            if (drop.isNoted) {
+                const baseItemName = drop.itemName.toLowerCase();
+                const baseItem = this.itemDatabase.items.find(item => 
+                    item.name && item.name.toLowerCase() === baseItemName && item.noteData
+                );
+                if (baseItem && baseItem.noteData) {
+                    finalItemId = baseItem.noteData;
+                }
+            }
+            return finalItemId;
+        });
+
+        // Format IDs in rows of ~15 items for readability
+        const idsPerRow = 15;
+        let lootList = '';
+        for (let i = 0; i < itemIds.length; i += idsPerRow) {
+            const rowIds = itemIds.slice(i, i + idsPerRow);
+            if (i === 0) {
+                lootList += rowIds.join(', ');
+            } else {
+                lootList += ',\n               ' + rowIds.join(', ');
+            }
+        }
+
+        // Build Lua output in requested format
+        const luaContent = `-- NPC LIST - Edit this directly\nlocal NPC_LIST = {\n${npcList}\n}\n\n-- LOOT LIST - Edit this directly\nlocal LOOT_LIST = {${lootList}}\n`;
+        const fileName = `group__${monsterNames.length}_monsters__drops.lua`;
+        const filePath = path.join(__dirname, '..', 'drops', fileName);
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        await fs.writeFile(filePath, luaContent);
+        return filePath;
+    }
+
     setupIpcHandlers() {
         // Load item database
         ipcMain.handle('load-item-database', async () => {
@@ -411,6 +464,11 @@ class MonsterScraperApp {
                 console.error('Error saving Lua drops:', error);
                 throw new Error(`Failed to save Lua drops: ${error.message}`);
             }
+        });
+
+        // Save group drops to Lua file
+        ipcMain.handle('save-group-lua', async (event, monsterNames, drops) => {
+            return await this.saveGroupLua(monsterNames, drops);
         });
 
         // Show save dialog

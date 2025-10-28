@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // File operations
     saveDrops: (monsterName, drops) => ipcRenderer.invoke('save-drops', monsterName, drops),
     saveDropsLua: (monsterName, drops) => ipcRenderer.invoke('save-drops-lua', monsterName, drops),
+    saveGroupLua: (monsterNames, drops) => ipcRenderer.invoke('save-group-lua', monsterNames, drops),
     showSaveDialog: (defaultPath) => ipcRenderer.invoke('show-save-dialog', defaultPath),
     
     // Debug operations
